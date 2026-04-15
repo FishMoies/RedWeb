@@ -5,7 +5,7 @@
 ![Vue](https://img.shields.io/badge/Vue-3.x-green?logo=vue.js)
 ![Supabase](https://img.shields.io/badge/Backend-Supabase-blueviolet?logo=supabase)
 ![Status](https://img.shields.io/badge/Status-Development-orange)
-![Made with Love](https://img.shields.io/badge/Made%20with-%E2%9D%A4%20Love%20and%20Vue.js-white)
+![Made with determination](https://img.shields.io/badge/Made%20with-%E2%9D%A4%20Determination%20and%20Vue.js-white)
 
 ## 许可证提示 License Notice
 该项目的源代码根据MIT获得许可。但是请注意，``assets/``目录包含从第三方版权财产中提取的示例资源材料，仅供演示之用。  
