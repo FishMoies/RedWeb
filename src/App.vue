@@ -239,6 +239,7 @@ body {
 
 .second-title {
   margin-left: 10px;
+  margin-top: 70px;
 
   font-family: 'Huiwen', sans-serif;
   font-size: 4vw;
