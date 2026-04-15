@@ -1,21 +1,77 @@
 <script setup>
-
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import fullpage from 'fullpage.js'
 import 'fullpage.js/dist/fullpage.css'
 
 let fpInstance = null
+const mapRef = ref(null)
+
+const handleMouseMove = (e) => {
+  const mapEl = mapRef.value
+  if (!mapEl) return
+
+  const rect = mapEl.getBoundingClientRect()
+
+  const x = e.clientX - rect.left
+  const y = e.clientY - rect.top
+
+  const centerX = rect.width / 2
+  const centerY = rect.height / 2
+
+  const offsetX = (x - centerX) / centerX
+  const offsetY = (y - centerY) / centerY
+
+  // 限制旋转角度在-25到25度之间，防止过度旋转
+  const rotateY = Math.max(-25, Math.min(25, offsetX * 5))   // 左右旋转
+  const rotateX = Math.max(-25, Math.min(25, -offsetY * 5))  // 上下倾斜
+
+  mapEl.style.transform = `
+    perspective(1000px)
+    rotateX(${rotateX}deg)
+    rotateY(${rotateY}deg)
+    scale(1.05)
+  `
+}
+
+const resetMap = () => {
+  const mapEl = mapRef.value
+  if (mapEl) {
+    mapEl.style.transform = `
+      perspective(1000px)
+      rotateX(0deg)
+      rotateY(0deg)
+      scale(1)
+    `
+  }
+}
 
 onMounted(() => {
+
+  // fullpage
   fpInstance = new fullpage('#fullpage', {
     autoScrolling: true,
     navigation: true,
   })
+
+  // map - 使用 ref 获取元素
+  const mapEl = mapRef.value
+
+  if (mapEl) {
+    mapEl.addEventListener('mousemove', handleMouseMove)
+    mapEl.addEventListener('mouseleave', resetMap)
+  }
 })
 
 onUnmounted(() => {
+
   if (fpInstance) {
     fpInstance.destroy('all')
+  }
+
+  const mapEl = mapRef.value
+  if (mapEl) {
+    mapEl.removeEventListener('mousemove', handleMouseMove)
+    mapEl.removeEventListener('mouseleave', resetMap)
   }
 })
 
@@ -49,7 +105,41 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="section">第二屏</div>
+    <div class="section">
+      <!-- 主页第二屏 -->
+       <div class="second-section-content">
+
+         <!-- 第二屏视频背景 -->
+         <video class="bg-video-second" autoplay muted loop playsinline>
+           <source src="/src/assets/Background.mp4" type="video/mp4" />
+         </video>
+
+         <!-- 第二屏黑色蒙版 -->
+         <div class="overlay-second"></div>
+
+         <div class = "second-title">
+           漫漫长征路
+           <p class="text">
+             长征是土地革命战争时期，中国工农红军主力撤离长江南北各苏区，转战两年到达陕甘苏区的战略转移行动。
+             <br><br>
+             长征是人类历史上的伟大奇迹，中央红军共进行了600余次战役战斗，攻占700多座县城，红军牺牲了营以上干部多达430余人，平均年龄不到30岁，共击溃国民党军数百个团，期间共经过14个省，翻越18座大山，跨过24条大河，走过荒草地，翻过雪山，行程约二万五千里。
+             <br><br>
+             长征精神是红军在1934-1936年长征期间形成的革命精神，以把民族利益高于一切、坚定理想信念、不惜一切牺牲、独立自主、艰苦奋斗及紧密团结为内核。
+           </p>
+         </div>
+         
+
+
+
+         <!-- 地图容器 -->
+        <div class="map-container">
+          <img ref="mapRef" src="/src/assets/second-item.jpg" class="map-image" />
+        </div>
+
+       </div>
+
+    </div>
+
     <div class="section">第三屏</div>
   </div>
 </template>
@@ -93,7 +183,7 @@ body {
 }
 
 .highlight {
-  color: rgb(186, 20, 20);
+  color: #C41D1D;
 }
 
 .subtitle {
@@ -103,6 +193,18 @@ body {
   font-size: 2vw;
   line-height: 1.2;
   color: rgb(255, 255, 255);
+}
+
+.text {
+  margin-top: 20px;
+  margin-left: 10px;
+  font-size: 1.7vw;
+  line-height: 1.2;
+  color: #ffffff;
+
+  width: 45%;
+
+  font-family: "Noto Serif SC", serif;
 }
 
 .frist-section-content::after {
@@ -123,14 +225,105 @@ body {
   background-size: cover;
 }
 
+.second-section-content {
+  height: 100vh;
+  background-color: #000000;
 
+  display: flex;
+  justify-content: space-between; /* 左右分布 */
+  align-items: center;            /* 垂直居中 */
 
+  position: relative;
+  overflow: hidden;
+}
+
+.second-title {
+  margin-left: 10px;
+
+  font-family: 'Huiwen', sans-serif;
+  font-size: 4vw;
+  line-height: 1.2;
+  color: #C41D1D;
+
+  position: absolute;
+  top: 100px;
+  left: 100px;
+  z-index: 2; /* 确保在遮罩之上显示 */
+}
+
+/* 地图容器 - 3D透视 */
+.map-container {
+  perspective: 1000px;
+  width: 50%;
+  height: 70%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-left: auto;
+  margin-right: 50px;
+  z-index: 2; /* 确保在遮罩之上显示 */
+  position: relative; /* 确保z-index生效 */
+}
+
+/* 地图图片 - 3D效果 */
+.map-image {
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow:
+    0 20px 40px rgba(255, 255, 255, 0.3),
+    0 0 60px rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  width: 100%;
+  height: auto;
+  max-width: 800px;
+  cursor: pointer;
+}
+
+.map-image:hover {
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.4);
+}
+
+/* 第二屏视频背景样式 */
+.bg-video-second {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* 第二屏黑色蒙版样式 - 透明度70% */
+.overlay-second {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7); /* 70%透明度 */
+  z-index: 1;
+}
 
 /* 为移动端做适配 */
 
 @media (max-width: 768px) {
   .frist-section-content {
     justify-content: center;/* 居中 */
+  }
+
+  /* 移动端地图适配 */
+  .map-container {
+    width: 90%;
+    height: 50%;
+    margin-right: 0;
+    margin-top: 80px;
+  }
+
+  .map-image {
+    max-width: 100%;
+    box-shadow:
+      0 10px 20px rgba(0,0,0,0.2),
+      0 0 30px rgba(0,0,0,0.1);
   }
 
   .title {
