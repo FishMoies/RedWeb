@@ -28,6 +28,16 @@ onUnmounted(() => {
       <!-- 主页第一屏 -->
       <div class="frist-section-content">
 
+        <!-- 手机端视频背景 -->
+        <video class="bg-video" autoplay muted loop playsinline>
+          <source src="/src/assets/Background.mp4" type="video/mp4" />
+        </video>
+
+        <!-- 黑色蒙版 -->
+        <div class="overlay"></div>
+
+
+
         <p class="title">
           要将<span class="highlight">长征精神</span><br>贯彻到底！
           <br>
@@ -61,6 +71,14 @@ body {
   position: relative; 
   overflow: hidden;
   
+}
+
+.bg-video {
+  display: none;   /* 默认PC不显示 */
+}
+
+.overlay {
+  display: none;
 }
 
 .title {
@@ -105,6 +123,57 @@ body {
   background-size: cover;
 }
 
+
+
+
+/* 为移动端做适配 */
+
+@media (max-width: 768px) {
+  .frist-section-content {
+    justify-content: center;/* 居中 */
+  }
+
+  .title {
+    margin: 0;
+    max-width: 90%;
+    text-align: center;
+    font-size: clamp(30px, 10vw, 60px);
+    line-height: 1.2;
+    position: relative;
+    z-index: 2;   /* 保证在最上层 */
+  }
+
+  .frist-section-content::after {
+    content: none;
+  }
+
+  .subtitle {
+    font-size: clamp(10px, 7vw, 30px);
+    opacity: 0.9;
+    position: relative;
+    z-index: 2;   /* 保证在最上层 */
+  }
+
+  .bg-video {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  .overlay {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8); /* 半透明黑 */
+    z-index: 1;
+  }
+
+}
+
 </style>
 
 <style>
@@ -115,6 +184,8 @@ body {
   font-weight: normal;
   font-style: normal;
 }
+
+
 
 </style>
 
