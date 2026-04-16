@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import fullpage from 'fullpage.js'
 import 'fullpage.js/dist/fullpage.css'
 import AppSkeleton from './components/AppSkeleton.vue'
@@ -70,8 +70,20 @@ onMounted(async () => {
     setTimeout(() => {
       loading.value = false
       clearTimeout(loadingTimeout)
-      
-      // 初始化fullpage（仅在内容加载后）
+    }, 500) // 增加延迟确保更平滑
+  } catch (error) {
+    console.error('加载过程中出错:', error)
+    loading.value = false
+    clearTimeout(loadingTimeout)
+  }
+})
+
+// 监听loading变化，初始化fullpage
+watch(loading, async (val) => {
+  if (!val) {
+    await nextTick()
+    
+    if (!fpInstance) {
       fpInstance = new fullpage('#fullpage', {
         autoScrolling: true,
         navigation: true,
@@ -85,11 +97,7 @@ onMounted(async () => {
           }
         }
       })
-    }, 500) // 增加延迟确保更平滑
-  } catch (error) {
-    console.error('加载过程中出错:', error)
-    loading.value = false
-    clearTimeout(loadingTimeout)
+    }
   }
 })
 
@@ -176,12 +184,12 @@ onUnmounted(() => {
 
 <template>
   <!-- 骨架屏 -->
-  <div v-if="loading" class="skeleton-container">
+  <div :class="{ 'skeleton-container': true, 'hidden': !loading }">
     <AppSkeleton />
   </div>
   
   <!-- 实际内容 -->
-  <div v-else id="fullpage">
+  <div id="fullpage" :class="{ 'loading': loading }">
     
     <div class="section">
       <!-- 主页第一屏 -->
@@ -263,11 +271,26 @@ body {
   z-index: 9999;
   background-color: #0a0a0a;
   overflow: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-/* 平滑过渡效果 */
+/* 骨架屏隐藏状态 */
+.skeleton-container.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* fullpage容器 */
 #fullpage {
   animation: fadeIn 0.5s ease;
+}
+
+/* fullpage加载状态 */
+#fullpage.loading {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 @keyframes fadeIn {
