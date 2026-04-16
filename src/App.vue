@@ -47,6 +47,54 @@ const resetMap = () => {
   }
 }
 
+// 安全初始化器函数
+const initFullpage = async () => {
+  await nextTick()
+
+  // 使用 requestAnimationFrame 确保 DOM 稳定
+  requestAnimationFrame(() => {
+    // 如果已有实例，先销毁
+    if (fpInstance) {
+      fpInstance.destroy('all')
+      fpInstance = null
+    }
+
+    fpInstance = new fullpage('#fullpage', {
+      autoScrolling: true,
+      navigation: true,
+      scrollOverflow: false,
+      fitToSection: true,
+      licenseKey: 'gplv3-license',
+
+      afterLoad(origin, destination, direction) {
+        // 使用 onmousemove/onmouseleave 替代 addEventListener，避免重复绑定
+        const mapEl = mapRef.value
+        if (!mapEl) return
+
+        mapEl.onmousemove = handleMouseMove
+        mapEl.onmouseleave = resetMap
+      },
+
+      onLeave(origin, destination, direction) {
+        // 离开时清理事件
+        const mapEl = mapRef.value
+        if (mapEl) {
+          mapEl.onmousemove = null
+          mapEl.onmouseleave = null
+        }
+      }
+    })
+  })
+}
+
+// 强制销毁函数
+const destroyFullpage = () => {
+  if (fpInstance) {
+    fpInstance.destroy('all')
+    fpInstance = null
+  }
+}
+
 onMounted(async () => {
   // 设置加载超时（最大8秒）
   const loadingTimeout = setTimeout(() => {
@@ -78,26 +126,10 @@ onMounted(async () => {
   }
 })
 
-// 监听loading变化，初始化fullpage
-watch(loading, async (val) => {
+// 监听loading变化，初始化fullpage（唯一入口）
+watch(loading, (val) => {
   if (!val) {
-    await nextTick()
-    
-    if (!fpInstance) {
-      fpInstance = new fullpage('#fullpage', {
-        autoScrolling: true,
-        navigation: true,
-        scrollOverflow: false,
-        afterLoad: () => {
-          // 确保地图交互在fullpage初始化后可用
-          const mapEl = mapRef.value
-          if (mapEl) {
-            mapEl.addEventListener('mousemove', handleMouseMove)
-            mapEl.addEventListener('mouseleave', resetMap)
-          }
-        }
-      })
-    }
+    initFullpage()
   }
 })
 
@@ -164,19 +196,16 @@ const preloadCriticalAssets = async () => {
   
   // 使用Promise.allSettled确保所有资源都处理完毕
   await Promise.allSettled(promises)
-  console.log('🎯 所有关键资源预加载完成')
+  console.log('所有关键资源预加载完成')
 }
 
 onUnmounted(() => {
-
-  if (fpInstance) {
-    fpInstance.destroy('all')
-  }
+  destroyFullpage()
 
   const mapEl = mapRef.value
   if (mapEl) {
-    mapEl.removeEventListener('mousemove', handleMouseMove)
-    mapEl.removeEventListener('mouseleave', resetMap)
+    mapEl.onmousemove = null
+    mapEl.onmouseleave = null
   }
 })
 
@@ -218,40 +247,59 @@ onUnmounted(() => {
 
     <div class="section">
       <!-- 主页第二屏 -->
-       <div class="second-section-content">
+      <div class="second-section-content">
 
-         <!-- 第二屏视频背景 -->
-         <video class="bg-video-second" autoplay muted loop playsinline>
-           <source src="/src/assets/Background.mp4" type="video/mp4" />
-         </video>
+        <!-- 第二屏视频背景 -->
+        <video class="bg-video-second" autoplay muted loop playsinline>
+          <source src="/src/assets/Background.mp4" type="video/mp4" />
+        </video>
 
-         <!-- 第二屏黑色蒙版 -->
-         <div class="overlay-second"></div>
+        <!-- 第二屏黑色蒙版 -->
+        <div class="overlay-second"></div>
 
-         <div class = "second-title">
-           漫漫长征路
-           <p class="text">
-             长征是土地革命战争时期，中国工农红军主力撤离长江南北各苏区，转战两年到达陕甘苏区的战略转移行动。
-             <br><br>
-             长征是人类历史上的伟大奇迹，中央红军共进行了600余次战役战斗，攻占700多座县城，红军牺牲了营以上干部多达430余人，平均年龄不到30岁，共击溃国民党军数百个团，期间共经过14个省，翻越18座大山，跨过24条大河，走过荒草地，翻过雪山，行程约二万五千里。
-             <br><br>
-             长征精神是红军在1934-1936年长征期间形成的革命精神，以把民族利益高于一切、坚定理想信念、不惜一切牺牲、独立自主、艰苦奋斗及紧密团结为内核。
-           </p>
-         </div>
-         
+        <!-- 内容网格容器 -->
+        <div class="second-grid-container">
+          <!-- 文本内容区域 -->
+          <div class="second-text-content">
+            <h2 class="second-title">漫漫长征路</h2>
+            <div class="second-text">
+              <p>长征是土地革命战争时期，中国工农红军主力撤离长江南北各苏区，转战两年到达陕甘苏区的战略转移行动。</p>
+              <p>长征是人类历史上的伟大奇迹，中央红军共进行了600余次战役战斗，期间共经过14个省，翻越18座大山，跨过24条大河，走过荒草地，翻过雪山，行程约二万五千里。</p>
+              <p>长征精神是红军在1934-1936年长征期间形成的革命精神，以把民族利益高于一切、坚定理想信念、不惜一切牺牲、独立自主、艰苦奋斗及紧密团结为内核。</p>
+            </div>
+          </div>
 
-
-
-         <!-- 地图容器 -->
-        <div class="map-container">
-          <img ref="mapRef" src="/src/assets/second-item.jpg" class="map-image" />
+          <!-- 地图容器 -->
+          <div class="map-container">
+            <img ref="mapRef" src="/src/assets/second-item.jpg" class="map-image" />
+          </div>
         </div>
 
-       </div>
-
+      </div>
     </div>
 
-    <div class="section">第三屏</div>
+  <div class="section third-section">
+
+      <video class="bg-video-third" autoplay muted loop playsinline>
+        <source src="/src/assets/Background2.mp4" type="video/mp4" />
+      </video>
+
+      <div class="overlay-second"></div>
+
+      <div class="thrid-title">
+        雄关漫道真如铁 而今迈步从头越
+      </div>
+      <div class="thrid-text">
+        Fortified passes are truly like iron; now we stride forward from the very beginning again.
+      </div>
+
+  </div>
+
+  <div class="section">
+
+  </div>
+
+
   </div>
 </template>
 
@@ -380,43 +428,116 @@ body {
 .second-section-content {
   height: 100vh;
   background-color: #000000;
-
-  display: flex;
-  justify-content: space-between; /* 左右分布 */
-  align-items: center;            /* 垂直居中 */
-
   position: relative;
   overflow: hidden;
 }
 
-.second-title {
-  margin-left: 10px;
-  margin-top: 70px;
+/* 第二屏网格容器 */
+.second-grid-container {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(400px, 1.2fr);
+  grid-template-rows: 1fr;
+  gap: clamp(20px, 4vw, 60px);
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 3vw, 60px) clamp(20px, 5vw, 80px);
+  max-width: 1800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
 
+/* 文本内容区域 */
+.second-text-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding-right: clamp(10px, 2vw, 30px);
+  margin-top: -25vh;
+}
+
+.second-title {
   font-family: 'Huiwen', sans-serif;
-  font-size: 4vw;
+  font-size: clamp(2.5rem, 4.5vw, 5rem);
   line-height: 1.2;
   color: #C41D1D;
+  margin-bottom: clamp(20px, 3vw, 40px);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
 
+.thrid-title {
+  font-family: 'Huiwen', sans-serif;
+  font-size: clamp(2.5rem, 4.0vw, 4.5rem);
+  line-height: 1.2;
+  color: #C41D1D;
+  margin-bottom: clamp(20px, 3vw, 40px);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  text-align: center;
+
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0%;
+}
+
+.second-text {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.0vw;
+  line-height: 1.6;
+  color: #ffffff;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+.thrid-text {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.0vw;
+  line-height: 1.0;
+  color: #ffffff;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+  text-align: center;
+
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.bg-video-third {
   position: absolute;
-  top: 100px;
-  left: 100px;
-  z-index: 2; /* 确保在遮罩之上显示 */
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.second-text p {
+  margin-bottom: 5px;
+  font-size: clamp(13px, 1.5vw, 30px);
+}
+
+.second-text p:last-child {
+  margin-bottom: 0;
 }
 
 /* 地图容器 - 3D透视 */
 .map-container {
   perspective: 1000px;
-  width: 50%;
-  height: 70%;
+  width: 100%;
+  height: 100%;
+  max-height: 75vh;
   display: flex;
   justify-content: center;
   align-items: center;
-
-  margin-left: auto;
-  margin-right: 50px;
-  z-index: 2; /* 确保在遮罩之上显示 */
-  position: relative; /* 确保z-index生效 */
+  position: relative;
+  z-index: 2;
+  margin-top: -20vh;
 }
 
 /* 地图图片 - 3D效果 */
@@ -426,10 +547,12 @@ body {
   box-shadow:
     0 20px 40px rgba(255, 255, 255, 0.3),
     0 0 60px rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  border-radius: clamp(8px, 1vw, 16px);
   width: 100%;
   height: auto;
-  max-width: 800px;
+  max-width: min(800px, 90%);
+  max-height: 70vh;
+  object-fit: contain;
   cursor: pointer;
 }
 
@@ -518,6 +641,105 @@ body {
     z-index: 1;
   }
 
+  /* 第二屏响应式调整 */
+  .second-grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 25px;
+    padding: 30px 20px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .second-text-content {
+    padding-right: 0;
+    text-align: center;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .second-title {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    margin-bottom: 15px;
+  }
+
+  .second-text {
+    font-size: clamp(0.9rem, 3.5vw, 1.2rem);
+    line-height: 1.5;
+    max-width: 95%;
+  }
+
+  .map-container {
+    max-height: 45vh;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+
+  .map-image {
+    max-width: 95%;
+    max-height: 45vh;
+  }
+
+}
+
+/* 超宽屏适配 */
+@media (min-width: 2000px) {
+  .second-grid-container {
+    max-width: 2000px;
+    padding: 100px;
+  }
+  
+  .second-title {
+    font-size: 5rem;
+  }
+  
+  .second-text {
+    font-size: 1.8rem;
+    line-height: 1.8;
+  }
+}
+
+/* 超窄屏适配（平板竖屏） */
+@media (max-width: 1024px) and (min-height: 1024px) {
+  .second-grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 40px;
+  }
+  
+  .map-container {
+    max-height: 60vh;
+  }
+}
+
+/* 极端宽高比适配 */
+@media (max-aspect-ratio: 3/4) {
+  .second-grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 30px;
+  }
+  
+  .second-text-content {
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+  
+  .map-container {
+    max-height: 40vh;
+  }
+}
+
+@media (min-aspect-ratio: 16/9) {
+  .second-grid-container {
+    gap: clamp(40px, 6vw, 80px);
+  }
+  
+  .second-title {
+    font-size: clamp(3rem, 5vw, 6rem);
+  }
 }
 
 </style>
