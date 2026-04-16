@@ -2,9 +2,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import fullpage from 'fullpage.js'
 import 'fullpage.js/dist/fullpage.css'
+import AppSkeleton from './components/AppSkeleton.vue'
 
 let fpInstance = null
 const mapRef = ref(null)
+const loading = ref(true)
 
 const handleMouseMove = (e) => {
   const mapEl = mapRef.value
@@ -45,22 +47,117 @@ const resetMap = () => {
   }
 }
 
-onMounted(() => {
-
-  // fullpage
-  fpInstance = new fullpage('#fullpage', {
-    autoScrolling: true,
-    navigation: true,
-  })
-
-  // map - 使用 ref 获取元素
-  const mapEl = mapRef.value
-
-  if (mapEl) {
-    mapEl.addEventListener('mousemove', handleMouseMove)
-    mapEl.addEventListener('mouseleave', resetMap)
+onMounted(async () => {
+  // 设置加载超时（最大8秒）
+  const loadingTimeout = setTimeout(() => {
+    console.warn('加载超时，强制显示内容')
+    loading.value = false
+  }, 8000)
+  
+  try {
+    // 等待字体加载完成
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready
+    } else {
+      // 如果浏览器不支持，等待1秒
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    // 预加载关键资源（视频、图片）
+    await preloadCriticalAssets()
+    
+    // 延迟一小段时间确保平滑过渡
+    setTimeout(() => {
+      loading.value = false
+      clearTimeout(loadingTimeout)
+      
+      // 初始化fullpage（仅在内容加载后）
+      fpInstance = new fullpage('#fullpage', {
+        autoScrolling: true,
+        navigation: true,
+        scrollOverflow: false,
+        afterLoad: () => {
+          // 确保地图交互在fullpage初始化后可用
+          const mapEl = mapRef.value
+          if (mapEl) {
+            mapEl.addEventListener('mousemove', handleMouseMove)
+            mapEl.addEventListener('mouseleave', resetMap)
+          }
+        }
+      })
+    }, 500) // 增加延迟确保更平滑
+  } catch (error) {
+    console.error('加载过程中出错:', error)
+    loading.value = false
+    clearTimeout(loadingTimeout)
   }
 })
+
+// 预加载关键资源
+const preloadCriticalAssets = async () => {
+  const assets = [
+    { src: '/src/assets/Background.mp4', type: 'video' },
+    { src: '/src/assets/Background.png', type: 'image' },
+    { src: '/src/assets/second-item.jpg', type: 'image' },
+    { src: '/src/assets/汇文明朝体.otf', type: 'font' }
+  ]
+  
+  const promises = assets.map(asset => {
+    return new Promise((resolve) => {
+      let el
+      
+      if (asset.type === 'video') {
+        el = document.createElement('video')
+        el.preload = 'auto'
+        el.muted = true
+        el.playsInline = true
+      } else if (asset.type === 'image') {
+        el = document.createElement('img')
+        el.decoding = 'async'
+        el.loading = 'eager'
+      } else {
+        // 字体使用FontFace API
+        const font = new FontFace('Huiwen', `url(${asset.src})`, {
+          display: 'swap'
+        })
+        font.load().then(() => {
+          document.fonts.add(font)
+          resolve()
+        }).catch(() => resolve())
+        return
+      }
+      
+      el.onload = el.onloadeddata = () => {
+        console.log(`✅ 资源加载完成: ${asset.src}`)
+        resolve()
+      }
+      
+      el.onerror = (err) => {
+        console.warn(`⚠️ 资源加载失败: ${asset.src}`, err)
+        resolve() // 即使失败也继续，不阻塞
+      }
+      
+      el.src = asset.src
+      
+      // 添加到文档以触发加载（隐藏）
+      el.style.display = 'none'
+      el.style.position = 'absolute'
+      el.style.opacity = '0'
+      document.body.appendChild(el)
+      
+      // 清理
+      setTimeout(() => {
+        if (document.body.contains(el)) {
+          document.body.removeChild(el)
+        }
+      }, 1000)
+    })
+  })
+  
+  // 使用Promise.allSettled确保所有资源都处理完毕
+  await Promise.allSettled(promises)
+  console.log('🎯 所有关键资源预加载完成')
+}
 
 onUnmounted(() => {
 
@@ -78,7 +175,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div id="fullpage">
+  <!-- 骨架屏 -->
+  <div v-if="loading" class="skeleton-container">
+    <AppSkeleton />
+  </div>
+  
+  <!-- 实际内容 -->
+  <div v-else id="fullpage">
     
     <div class="section">
       <!-- 主页第一屏 -->
@@ -148,6 +251,32 @@ onUnmounted(() => {
 
 body {
   font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 骨架屏容器 */
+.skeleton-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 9999;
+  background-color: #0a0a0a;
+  overflow: hidden;
+}
+
+/* 平滑过渡效果 */
+#fullpage {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .frist-section-content {
@@ -377,9 +506,13 @@ body {
   src: url('/src/assets/汇文明朝体.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap; /* 防止字体加载阻塞UI */
 }
 
-
+/* 全局字体优化 */
+* {
+  font-display: swap;
+}
 
 </style>
 
