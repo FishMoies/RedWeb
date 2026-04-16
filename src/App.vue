@@ -286,10 +286,42 @@ onUnmounted(() => {
 
       <div class="overlay-second"></div>
 
-      <div class="thrid-title">
-        雄关漫道真如铁 而今迈步从头越
+      <div
+        v-motion
+        :initial="{
+          opacity: 0,
+          y: 80
+        }"
+        :visible="{
+          opacity: 1,
+          y: 0,
+          transition: {
+            delay: 150,
+            duration: 700,
+            ease: 'easeOut'
+          }
+        }"
+        class="thrid-title"
+      >
+         雄关漫道真如铁 而今迈步从头越
       </div>
-      <div class="thrid-text">
+      <div
+        v-motion
+        :initial="{
+          opacity: 0,
+          y: 60
+        }"
+        :visible="{
+          opacity: 1,
+          y: 0,
+          transition: {
+            delay: 300,
+            duration: 700,
+            ease: 'easeOut'
+          }
+        }"
+        class="thrid-text"
+      >
         Fortified passes are truly like iron; now we stride forward from the very beginning again.
       </div>
 

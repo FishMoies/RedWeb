@@ -7,6 +7,8 @@
 ![Status](https://img.shields.io/badge/Status-Development-orange)
 ![Made with determination](https://img.shields.io/badge/Made%20with-%E2%9D%A4%20Determination%20and%20Vue.js-white)
 
+![示例图片](/readmepublic/1.png)
+
 ## 许可证提示 License Notice
 该项目的源代码根据MIT获得许可。但是请注意，``assets/``目录包含从第三方版权财产中提取的示例资源材料，仅供演示之用。  
 这些资源不受MIT许可证的保护。如果您打算移植、重新分发或商业使用此项目，您必须用自己的资产替换这些受版权保护的材料，以避免法律侵权。  

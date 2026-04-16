@@ -4,13 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview",
-  "deploy": "gh-pages -d dist"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@vueuse/motion": "^3.0.3",
     "fullpage.js": "^4.0.41",
+    "gsap": "^3.15.0",
     "vue": "^3.5.32"
   },
   "devDependencies": {
