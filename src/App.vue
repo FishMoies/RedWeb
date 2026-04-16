@@ -286,6 +286,7 @@ onUnmounted(() => {
 
       <div class="overlay-second"></div>
 
+      <!-- 桌面版：一行显示 -->
       <div
         v-motion
         :initial="{
@@ -301,9 +302,30 @@ onUnmounted(() => {
             ease: 'easeOut'
           }
         }"
-        class="thrid-title"
+        class="thrid-title desktop-only"
       >
-         雄关漫道真如铁 而今迈步从头越
+          雄关漫道真如铁 而今迈步从头越
+      </div>
+      
+      <!-- 移动版：两行显示 -->
+      <div
+        v-motion
+        :initial="{
+          opacity: 0,
+          y: 80
+        }"
+        :visible="{
+          opacity: 1,
+          y: 0,
+          transition: {
+            delay: 150,
+            duration: 700,
+            ease: 'easeOut'
+          }
+        }"
+        class="thrid-title mobile-only"
+      >
+          雄关漫道真如铁<br>而今迈步从头越
       </div>
       <div
         v-motion
@@ -516,6 +538,15 @@ body {
   margin-top: 0%;
 }
 
+/* 桌面版默认显示，移动版默认隐藏 */
+.desktop-only {
+  display: flex;
+}
+
+.mobile-only {
+  display: none;
+}
+
 .second-text {
   font-family: "Noto Serif SC", serif;
   font-size: 1.0vw;
@@ -712,6 +743,25 @@ body {
   .map-image {
     max-width: 95%;
     max-height: 45vh;
+  }
+
+  /* 在移动端切换显示：隐藏桌面版，显示移动版 */
+  .desktop-only {
+    display: none;
+  }
+  
+  .mobile-only {
+    display: flex;
+  }
+
+  /* 在移动端隐藏英文翻译 */
+  .thrid-text {
+    display: none;
+  }
+
+  /* 在移动端隐藏第二屏图片 */
+  .map-container {
+    display: none;
   }
 
 }
