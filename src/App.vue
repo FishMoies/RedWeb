@@ -261,7 +261,24 @@ onUnmounted(() => {
         <div class="second-grid-container">
           <!-- 文本内容区域 -->
           <div class="second-text-content">
-            <h2 class="second-title">漫漫长征路</h2>
+            <h2
+              v-motion
+              :initial="{
+                opacity: 1,
+                color: '#FFFFFF'
+              }"
+              :visible="{
+                color: '#C41D1D',
+                transition: {
+                  delay: 1000,
+                  duration: 1500,
+                  ease: 'easeInOut'
+                }
+              }"
+              class="second-title"
+            >
+              漫漫长征路
+            </h2>
             <div class="second-text">
               <p>长征是土地革命战争时期，中国工农红军主力撤离长江南北各苏区，转战两年到达陕甘苏区的战略转移行动。</p>
               <p>长征是人类历史上的伟大奇迹，中央红军共进行了600余次战役战斗，期间共经过14个省，翻越18座大山，跨过24条大河，走过荒草地，翻过雪山，行程约二万五千里。</p>
@@ -280,11 +297,8 @@ onUnmounted(() => {
 
   <div class="section third-section">
 
-      <video class="bg-video-third" autoplay muted loop playsinline>
-        <source src="/src/assets/Background2.mp4" type="video/mp4" />
-      </video>
-
-      <div class="overlay-second"></div>
+      <!-- 第三屏背景图片 -->
+      <div class="bg-image-third"></div>
 
       <!-- 桌面版：一行显示 -->
       <div
@@ -484,6 +498,20 @@ body {
   background-color: #000000;
   position: relative;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 第三屏容器样式 */
+.third-section {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
 /* 第二屏网格容器 */
@@ -516,7 +544,7 @@ body {
   font-family: 'Huiwen', sans-serif;
   font-size: clamp(2.5rem, 4.5vw, 5rem);
   line-height: 1.2;
-  color: #C41D1D;
+  /* 颜色由动画控制，不设置固定颜色 */
   margin-bottom: clamp(20px, 3vw, 40px);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
@@ -559,7 +587,7 @@ body {
   font-family: "Noto Serif SC", serif;
   font-size: 1.0vw;
   line-height: 1.0;
-  color: #ffffff;
+  color: #000000;
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
   text-align: center;
 
@@ -569,15 +597,6 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-.bg-video-third {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
 }
 
 .second-text p {
@@ -619,6 +638,7 @@ body {
   cursor: pointer;
 }
 
+
 .map-image:hover {
   box-shadow:
     0 40px 80px rgba(0,0,0,0.4);
@@ -641,6 +661,17 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.7); /* 70%透明度 */
   z-index: 1;
+}
+
+/* 第三屏背景图片样式 */
+.bg-image-third {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: url('/src/assets/Background3.png') no-repeat center center;
+  background-size: cover;
+  z-index: 0;
 }
 
 /* 为移动端做适配 */
@@ -704,14 +735,29 @@ body {
     z-index: 1;
   }
 
-  /* 第二屏响应式调整 */
+  /* 移动端第二屏：隐藏背景视频，使用纯黑色背景 */
+  .bg-video-second {
+    display: none !important;
+  }
+  
+  .second-section-content {
+    background-color: #000000 !important; /* 纯黑色背景 */
+  }
+  
+  .overlay-second {
+    background: rgba(0, 0, 0, 0) !important; /* 完全透明，因为背景已经是黑色 */
+  }
+
+  /* 第二屏响应式调整 - 优化垂直水平居中 */
   .second-grid-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     gap: 25px;
     padding: 30px 20px;
-    align-items: center;
-    justify-items: center;
+    height: 100%;
+    width: 100%;
   }
 
   .second-text-content {
@@ -721,16 +767,20 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 95%;
   }
 
   .second-title {
-    font-size: clamp(2rem, 8vw, 3.5rem);
-    margin-bottom: 15px;
+    font-size: clamp(3rem, 12vw, 5.5rem); /* 进一步加大标题字号 */
+    margin-bottom: 25px;
+    line-height: 1.1;
   }
 
   .second-text {
-    font-size: clamp(0.9rem, 3.5vw, 1.2rem);
-    line-height: 1.5;
+    font-size: clamp(1.3rem, 5.5vw, 1.8rem); /* 进一步加大文本字号 */
+    line-height: 1.7;
     max-width: 95%;
   }
 
@@ -759,9 +809,9 @@ body {
     display: none;
   }
 
-  /* 在移动端隐藏第二屏图片 */
+  /* 在移动端隐藏第二屏图片 - 确保隐藏 */
   .map-container {
-    display: none;
+    display: none !important;
   }
 
 }
@@ -842,4 +892,5 @@ body {
 }
 
 </style>
+
 
