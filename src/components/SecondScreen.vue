@@ -137,17 +137,16 @@ defineExpose({ onSectionEnter, onSectionLeave })
   align-items: center;
 }
 
-/* 第二屏网格容器 */
+/* 第二屏网格容器 - 自适应高度，由父层 flex 居中 */
 .second-grid-container {
-  height: 100%;
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(400px, 1.2fr);
-  grid-template-rows: 1fr;
   gap: clamp(20px, 4vw, 60px);
   align-items: center;
   justify-content: center;
   padding: clamp(20px, 3vw, 60px) clamp(20px, 5vw, 80px);
   max-width: 1800px;
+  width: 100%;
   margin: 0 auto;
   position: relative;
   z-index: 2;
@@ -158,9 +157,7 @@ defineExpose({ onSectionEnter, onSectionLeave })
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 100%;
   padding-right: clamp(10px, 2vw, 30px);
-  margin-top: -25vh;
 }
 
 .second-title {
@@ -193,14 +190,12 @@ defineExpose({ onSectionEnter, onSectionLeave })
 .map-container {
   perspective: 1000px;
   width: 100%;
-  height: 100%;
   max-height: 75vh;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   z-index: 2;
-  margin-top: -20vh;
 }
 
 /* 地图图片 - 3D效果 */
@@ -245,21 +240,6 @@ defineExpose({ onSectionEnter, onSectionLeave })
 
 /* 移动端适配 */
 @media (max-width: 768px) {
-  /* 移动端地图适配 */
-  .map-container {
-    width: 90%;
-    height: 50%;
-    margin-right: 0;
-    margin-top: 80px;
-  }
-
-  .map-image {
-    max-width: 100%;
-    box-shadow:
-      0 10px 20px rgba(0,0,0,0.2),
-      0 0 30px rgba(0,0,0,0.1);
-  }
-
   /* 移动端第二屏：隐藏背景视频，使用纯黑色背景 */
   .bg-video-second {
     display: none !important;
@@ -273,7 +253,7 @@ defineExpose({ onSectionEnter, onSectionLeave })
     background: rgba(0, 0, 0, 0) !important; /* 完全透明，因为背景已经是黑色 */
   }
 
-  /* 第二屏响应式调整 - 优化垂直水平居中 */
+  /* 第二屏响应式调整 - 使用 flex 列布局实现内容居中 */
   .second-grid-container {
     display: flex !important;
     flex-direction: column;
@@ -309,18 +289,7 @@ defineExpose({ onSectionEnter, onSectionLeave })
     max-width: 95%;
   }
 
-  .map-container {
-    max-height: 45vh;
-    margin-top: 10px;
-    margin-bottom: 20px;
-  }
-
-  .map-image {
-    max-width: 95%;
-    max-height: 45vh;
-  }
-
-  /* 在移动端隐藏第二屏图片 - 确保隐藏 */
+  /* 在移动端隐藏第二屏地图图片 */
   .map-container {
     display: none !important;
   }

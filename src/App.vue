@@ -10,12 +10,17 @@ import ThirdScreen from './components/ThirdScreen.vue'
 
 import { useFontFace } from './composables/useFontFace'
 import { usePreload } from './composables/usePreload'
+import { useAudioPlayer } from './composables/useAudioPlayer'
+import MusicPlayer from './components/MusicPlayer.vue'
 
 // ===== 注入字体 =====
 useFontFace()
 
 // ===== 预加载管理 =====
 const { loading, preloadCriticalAssets } = usePreload()
+
+// ===== 音频播放器 =====
+const { initPlayer, destroyPlayer } = useAudioPlayer()
 
 // ===== 子组件模板 ref（用于 fullpage 回调通信） =====
 const secondScreenRef = ref(null)
@@ -101,6 +106,16 @@ onMounted(async () => {
   }
 })
 
+// loading 完成后初始化音频播放器
+watch(loading, (val) => {
+  if (!val) {
+    // fullpage 初始化后启动音频
+    setTimeout(() => {
+      initPlayer()
+    }, 300)
+  }
+})
+
 // 监听 loading 变化，初始化 fullpage（唯一入口）
 watch(loading, (val) => {
   if (!val) {
@@ -110,6 +125,7 @@ watch(loading, (val) => {
 
 onUnmounted(() => {
   destroyFullpage()
+  destroyPlayer()
 
   // 确保第二屏鼠标事件被清理
   const secondScreen = secondScreenRef.value
@@ -132,6 +148,9 @@ onUnmounted(() => {
     <ThirdScreen />
     <div class="section" />
   </div>
+
+  <!-- 音乐浮窗播放器 -->
+  <MusicPlayer />
 </template>
 
 <style scoped>
