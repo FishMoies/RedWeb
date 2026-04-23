@@ -4,6 +4,41 @@ import fullpage from 'fullpage.js'
 import 'fullpage.js/dist/fullpage.css'
 import AppSkeleton from './components/AppSkeleton.vue'
 
+// ===== 通过统一资源入口导入所有静态资源 =====
+// 这些资源会被 Vite 编译时解析、打包并自动替换引用路径
+import {
+  backgroundMp4,
+  backgroundPng,
+  background3Png,
+  secondItemJpg,
+  huiwenOtf
+} from '@/assets'
+
+// ===== CSS v-bind 变量（供 <style scoped> 使用） =====
+// 用 Vite 处理过的资源路径构建 CSS url()，避免硬编码路径
+const firstScreenBg = `linear-gradient(to left, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 80%), url(${backgroundPng}) no-repeat right center / cover`
+const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
+
+// ===== 在组件挂载前同步注入 @font-face =====
+// 直接将字体文件注入页面，确保 document.fonts 可以检测到并等待加载
+;(function injectFontFace() {
+  const styleId = 'huiwen-font-face'
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style')
+    style.id = styleId
+    style.textContent = `
+      @font-face {
+        font-family: 'Huiwen';
+        src: url(${huiwenOtf}) format('opentype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+    `
+    document.head.appendChild(style)
+  }
+})()
+
 let fpInstance = null
 const mapRef = ref(null)
 const loading = ref(true)
@@ -136,10 +171,10 @@ watch(loading, (val) => {
 // 预加载关键资源
 const preloadCriticalAssets = async () => {
   const assets = [
-    { src: '/src/assets/Background.mp4', type: 'video' },
-    { src: '/src/assets/Background.png', type: 'image' },
-    { src: '/src/assets/second-item.jpg', type: 'image' },
-    { src: '/src/assets/汇文明朝体.otf', type: 'font' }
+    { src: backgroundMp4, type: 'video' },
+    { src: backgroundPng, type: 'image' },
+    { src: secondItemJpg, type: 'image' },
+    { src: huiwenOtf, type: 'font' }
   ]
   
   const promises = assets.map(asset => {
@@ -226,7 +261,7 @@ onUnmounted(() => {
 
         <!-- 手机端视频背景 -->
         <video class="bg-video" autoplay muted loop playsinline>
-          <source src="/src/assets/Background.mp4" type="video/mp4" />
+          <source :src="backgroundMp4" type="video/mp4" />
         </video>
 
         <!-- 黑色蒙版 -->
@@ -251,7 +286,7 @@ onUnmounted(() => {
 
         <!-- 第二屏视频背景 -->
         <video class="bg-video-second" autoplay muted loop playsinline>
-          <source src="/src/assets/Background.mp4" type="video/mp4" />
+          <source :src="backgroundMp4" type="video/mp4" />
         </video>
 
         <!-- 第二屏黑色蒙版 -->
@@ -288,7 +323,7 @@ onUnmounted(() => {
 
           <!-- 地图容器 -->
           <div class="map-container">
-            <img ref="mapRef" src="/src/assets/second-item.jpg" class="map-image" />
+            <img ref="mapRef" :src="secondItemJpg" class="map-image" />
           </div>
         </div>
 
@@ -483,14 +518,7 @@ body {
   width: 60%;   /* 控制图片占比 */
   height: 100%;
 
-  background: 
-    linear-gradient(
-      to left,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 1) 80%
-    ),
-    url('/src/assets/Background.png') no-repeat right center;
-  background-size: cover;
+  background: v-bind(firstScreenBg);
 }
 
 .second-section-content {
@@ -669,8 +697,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  background: url('/src/assets/Background3.png') no-repeat center center;
-  background-size: cover;
+  background: v-bind(thirdScreenBg);
   z-index: 0;
 }
 
@@ -878,15 +905,7 @@ body {
 
 <style>
 
-@font-face {
-  font-family: 'Huiwen';
-  src: url('/src/assets/汇文明朝体.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap; /* 防止字体加载阻塞UI */
-}
-
-/* 全局字体优化 */
+/* 全局字体优化 - @font-face 已在 <script setup> 中通过 JS 动态注入 */
 * {
   font-display: swap;
 }
