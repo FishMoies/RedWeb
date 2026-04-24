@@ -68,7 +68,7 @@ const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
       }"
       class="thrid-text"
     >
-      Fortified passes are truly like iron; now we stride forward from the very beginning again.
+      《忆秦娥•娄山关》毛泽东
     </div>
 
   </div>

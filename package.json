@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@vueuse/motion": "^3.0.3",
-    "fullpage.js": "^4.0.41",
     "gsap": "^3.15.0",
     "vue": "^3.5.32"
   },

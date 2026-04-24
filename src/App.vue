@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import fullpage from 'fullpage.js'
-import 'fullpage.js/dist/fullpage.css'
+import gsap from 'gsap'
+import ScrollTrigger from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
 
 import AppSkeleton from './components/AppSkeleton.vue'
 import FirstScreen from './components/FirstScreen.vue'
@@ -22,62 +24,80 @@ const { loading, preloadCriticalAssets } = usePreload()
 // ===== 音频播放器 =====
 const { initPlayer, destroyPlayer } = useAudioPlayer()
 
-// ===== 子组件模板 ref（用于 fullpage 回调通信） =====
+// ===== 子组件模板 ref（用于滚动通信） =====
 const secondScreenRef = ref(null)
+const containerRef = ref(null)
 
-// ===== fullpage 实例 =====
-let fpInstance = null
+// ===== 当前活跃面板索引 =====
+const currentIndex = ref(-1)
+
+// ===== 追踪 App 层级创建的 ScrollTrigger 实例（选择性销毁） =====
+const appTriggers = []
 
 /**
- * 安全初始化 fullpage.js
+ * 面板切换处理器
+ * 当进入某个面板时，通知 SecondScreen 绑定/清理 3D 鼠标事件
  */
-const initFullpage = async () => {
+const handleEnter = (index) => {
+  currentIndex.value = index
+  const secondScreen = secondScreenRef.value
+  if (!secondScreen) return
+
+  if (index === 1) {
+    secondScreen.onSectionEnter()
+  } else {
+    secondScreen.onSectionLeave()
+  }
+}
+
+// ===== GSAP ScrollTrigger 初始化（替代 fullpage.js） =====
+const initScroll = async () => {
   await nextTick()
 
   requestAnimationFrame(() => {
-    if (fpInstance) {
-      fpInstance.destroy('all')
-      fpInstance = null
-    }
+    // 只销毁 App 层级创建的 ScrollTrigger，不波及 SecondScreen 内部 self-managed 的 trigger
+    appTriggers.forEach(t => t.kill())
+    appTriggers.length = 0
 
-    fpInstance = new fullpage('#fullpage', {
-      autoScrolling: true,
-      navigation: true,
-      scrollOverflow: false,
-      fitToSection: true,
-      licenseKey: 'gplv3-license',
+    const panels = gsap.utils.toArray('.panel')
 
-      afterLoad(origin, destination, direction) {
-        // 通知第二屏：进入活动状态，绑定 3D 鼠标事件
-        const secondScreen = secondScreenRef.value
-        if (secondScreen) {
-          secondScreen.onSectionEnter()
-        }
-      },
+    panels.forEach((panel, i) => {
+      // 第二屏（index === 1）由自身管理横向滚动，完全隔离避免冲突
+      if (i === 1) return
 
-      onLeave(origin, destination, direction) {
-        // 通知第二屏：离开活动状态，清理 3D 鼠标事件
-        const secondScreen = secondScreenRef.value
-        if (secondScreen) {
-          secondScreen.onSectionLeave()
-        }
-      }
+      const st = ScrollTrigger.create({
+        trigger: panel,
+        start: 'top 90%',
+        end: 'top 10%',
+
+        onEnter: () => handleEnter(i),
+        onEnterBack: () => handleEnter(i),
+      })
+
+      appTriggers.push(st)
     })
+
+    // 触发 ScrollTrigger 刷新确保位置计算准确
+    ScrollTrigger.refresh()
+    // 初始状态：第一个面板为活跃
+    handleEnter(0)
   })
 }
 
 /**
- * 强制销毁 fullpage 实例
+ * 销毁 App 层级的 ScrollTrigger 实例
  */
-const destroyFullpage = () => {
-  if (fpInstance) {
-    fpInstance.destroy('all')
-    fpInstance = null
-  }
+const destroyScroll = () => {
+  appTriggers.forEach(t => t.kill())
+  appTriggers.length = 0
 }
 
 // ===== 生命周期 =====
 onMounted(async () => {
+  // ★ 尽早初始化音频播放器（创建音频实例 + 注册滚动/触摸监听），
+  //   不等待字体/资源加载完成，确保用户首次滑动即触发背景音乐
+  initPlayer()
+
   const loadingTimeout = setTimeout(() => {
     console.warn('加载超时，强制显示内容')
     loading.value = false
@@ -109,22 +129,21 @@ onMounted(async () => {
 // loading 完成后初始化音频播放器
 watch(loading, (val) => {
   if (!val) {
-    // fullpage 初始化后启动音频
     setTimeout(() => {
       initPlayer()
     }, 300)
   }
 })
 
-// 监听 loading 变化，初始化 fullpage（唯一入口）
+// 监听 loading 变化，初始化 ScrollTrigger（唯一入口）
 watch(loading, (val) => {
   if (!val) {
-    initFullpage()
+    initScroll()
   }
 })
 
 onUnmounted(() => {
-  destroyFullpage()
+  destroyScroll()
   destroyPlayer()
 
   // 确保第二屏鼠标事件被清理
@@ -141,12 +160,17 @@ onUnmounted(() => {
     <AppSkeleton />
   </div>
 
-  <!-- 实际内容 -->
-  <div id="fullpage" :class="{ 'loading': loading }">
-    <FirstScreen />
-    <SecondScreen ref="secondScreenRef" />
-    <ThirdScreen />
-    <div class="section" />
+  <!-- 实际内容：GSAP 面板容器 -->
+  <div ref="container" class="scroll-container" :class="{ 'loading': loading }">
+    <section class="panel">
+      <FirstScreen />
+    </section>
+    <section class="panel">
+      <SecondScreen ref="secondScreenRef" />
+    </section>
+    <section class="panel">
+      <ThirdScreen />
+    </section>
   </div>
 
   <!-- 音乐浮窗播放器 -->
@@ -178,16 +202,23 @@ body {
   pointer-events: none;
 }
 
-/* fullpage 容器 */
-#fullpage {
+/* 滚动容器 */
+.scroll-container {
   animation: fadeIn 0.5s ease;
 }
 
-/* fullpage 加载状态 */
-#fullpage.loading {
+/* 滚动容器加载状态 */
+.scroll-container.loading {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+}
+
+/* ===== GSAP 面板样式（替代 fullpage section） ===== */
+.panel {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
 }
 
 @keyframes fadeIn {
