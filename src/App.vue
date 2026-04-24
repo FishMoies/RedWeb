@@ -1,19 +1,16 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import gsap from 'gsap'
-import ScrollTrigger from 'gsap/ScrollTrigger'
-
-gsap.registerPlugin(ScrollTrigger)
+import { createScrollNavigation } from '@/animations/scrollNavigationAnimation'
 
 import AppSkeleton from './components/AppSkeleton.vue'
 import FirstScreen from './components/FirstScreen.vue'
 import SecondScreen from './components/SecondScreen.vue'
 import ThirdScreen from './components/ThirdScreen.vue'
+import MusicPlayer from './components/MusicPlayer.vue'
 
 import { useFontFace } from './composables/useFontFace'
 import { usePreload } from './composables/usePreload'
 import { useAudioPlayer } from './composables/useAudioPlayer'
-import MusicPlayer from './components/MusicPlayer.vue'
 
 // ===== 注入字体 =====
 useFontFace()
@@ -26,13 +23,11 @@ const { initPlayer, destroyPlayer } = useAudioPlayer()
 
 // ===== 子组件模板 ref（用于滚动通信） =====
 const secondScreenRef = ref(null)
-const containerRef = ref(null)
 
 // ===== 当前活跃面板索引 =====
 const currentIndex = ref(-1)
 
-// ===== 追踪 App 层级创建的 ScrollTrigger 实例（选择性销毁） =====
-const appTriggers = []
+let destroyScrollNavigation = null
 
 /**
  * 面板切换处理器
@@ -50,52 +45,9 @@ const handleEnter = (index) => {
   }
 }
 
-// ===== GSAP ScrollTrigger 初始化（替代 fullpage.js） =====
-const initScroll = async () => {
-  await nextTick()
-
-  requestAnimationFrame(() => {
-    // 只销毁 App 层级创建的 ScrollTrigger，不波及 SecondScreen 内部 self-managed 的 trigger
-    appTriggers.forEach(t => t.kill())
-    appTriggers.length = 0
-
-    const panels = gsap.utils.toArray('.panel')
-
-    panels.forEach((panel, i) => {
-      // 第二屏（index === 1）由自身管理横向滚动，完全隔离避免冲突
-      if (i === 1) return
-
-      const st = ScrollTrigger.create({
-        trigger: panel,
-        start: 'top 90%',
-        end: 'top 10%',
-
-        onEnter: () => handleEnter(i),
-        onEnterBack: () => handleEnter(i),
-      })
-
-      appTriggers.push(st)
-    })
-
-    // 触发 ScrollTrigger 刷新确保位置计算准确
-    ScrollTrigger.refresh()
-    // 初始状态：第一个面板为活跃
-    handleEnter(0)
-  })
-}
-
-/**
- * 销毁 App 层级的 ScrollTrigger 实例
- */
-const destroyScroll = () => {
-  appTriggers.forEach(t => t.kill())
-  appTriggers.length = 0
-}
-
 // ===== 生命周期 =====
 onMounted(async () => {
-  // ★ 尽早初始化音频播放器（创建音频实例 + 注册滚动/触摸监听），
-  //   不等待字体/资源加载完成，确保用户首次滑动即触发背景音乐
+  // ★ 尽早初始化音频播放器（创建音频实例 + 注册滚动/触摸监听）
   initPlayer()
 
   const loadingTimeout = setTimeout(() => {
@@ -138,12 +90,23 @@ watch(loading, (val) => {
 // 监听 loading 变化，初始化 ScrollTrigger（唯一入口）
 watch(loading, (val) => {
   if (!val) {
-    initScroll()
+    nextTick(() => {
+      requestAnimationFrame(() => {
+        destroyScrollNavigation = createScrollNavigation({
+          panelSelector: '.panel',
+          excludeIndex: 1,
+          onEnter: handleEnter
+        })
+      })
+    })
   }
 })
 
 onUnmounted(() => {
-  destroyScroll()
+  if (destroyScrollNavigation) {
+    destroyScrollNavigation()
+    destroyScrollNavigation = null
+  }
   destroyPlayer()
 
   // 确保第二屏鼠标事件被清理
@@ -161,7 +124,7 @@ onUnmounted(() => {
   </div>
 
   <!-- 实际内容：GSAP 面板容器 -->
-  <div ref="container" class="scroll-container" :class="{ 'loading': loading }">
+  <div class="scroll-container" :class="{ 'loading': loading }">
     <section class="panel">
       <FirstScreen />
     </section>
@@ -172,6 +135,27 @@ onUnmounted(() => {
       <ThirdScreen />
     </section>
   </div>
+
+  <!-- 底部信息栏：备案号与联系邮箱 -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <a
+        href="https://beian.miit.gov.cn/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="footer-link"
+      >
+        湘ICP备2026014314号-1
+      </a>
+      <span class="footer-separator">|</span>
+      <a
+        href="mailto:xisiyao0529@gmail.com"
+        class="footer-link"
+      >
+        xisiyao0529@gmail.com
+      </a>
+    </div>
+  </footer>
 
   <!-- 音乐浮窗播放器 -->
   <MusicPlayer />
@@ -214,7 +198,7 @@ body {
   pointer-events: none;
 }
 
-/* ===== GSAP 面板样式（替代 fullpage section） ===== */
+/* ===== GSAP 面板样式 ===== */
 .panel {
   min-height: 100vh;
   width: 100%;
@@ -222,11 +206,60 @@ body {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== 底部信息栏 ===== */
+.site-footer {
+  width: 100%;
+  background-color: #1a1a1a;
+  padding: clamp(10px, 1.5vh, 20px) 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 1vw, 16px);
+  flex-wrap: wrap;
+}
+
+.footer-link {
+  font-family: "Noto Serif SC", "PingFang SC", serif;
+  font-size: clamp(0.65rem, 0.85vw, 1rem);
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.25s ease;
+  white-space: nowrap;
+}
+
+.footer-link:hover {
+  color: #ffffff;
+}
+
+.footer-separator {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: clamp(0.65rem, 0.85vw, 1rem);
+  user-select: none;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 10px 12px;
   }
-  to {
-    opacity: 1;
+
+  .footer-link {
+    font-size: 0.7rem;
+  }
+
+  .footer-separator {
+    font-size: 0.7rem;
   }
 }
 </style>
