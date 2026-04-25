@@ -13,12 +13,12 @@ defineExpose({ show, spiritVisible })
     <!-- 标题区 -->
     <div class="spirit-header">
       <h2 class="spirit-title">长征精神&nbsp;<span class="spirit-highlight">薪火相传</span></h2>
-      <p class="spirit-subtitle">新时代的长征路，精神永续</p>
+      <p v-if="!isMobile" class="spirit-subtitle">新时代的长征路，精神永续</p>
     </div>
 
     <!-- 四张卡片：2x2 网格 -->
     <div class="spirit-grid">
-      <div class="spirit-card">
+      <div v-if="!isMobile" class="spirit-card">
         <div v-if="!isMobile" class="spirit-card-icon">🚀</div>
         <h3 class="spirit-card-title">航天逐梦</h3>
         <p class="spirit-card-desc">

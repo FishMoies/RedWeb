@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { secondItemJpg } from '@/assets'
 import { useMouseParallax } from '@/composables/useMouseParallax'
+import { useDeviceDetect } from '@/composables/useDeviceDetect'
+
+const { isMobile } = useDeviceDetect()
 
 const mapRef = ref(null)
 
@@ -48,12 +51,12 @@ defineExpose({ onSectionEnter, onSectionLeave })
           <span class="stat-unit">人</span>
           <span class="stat-label">干部牺牲</span>
         </div>
-        <div class="stat-card">
+        <div v-if="!isMobile" class="stat-card">
           <span class="stat-number">25000</span>
           <span class="stat-unit">里</span>
           <span class="stat-label">行军里程</span>
         </div>
-        <div class="stat-card">
+        <div v-if="!isMobile" class="stat-card">
           <span class="stat-number"><30</span>
           <span class="stat-unit">岁</span>
           <span class="stat-label">平均年龄</span>
