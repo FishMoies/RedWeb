@@ -20,7 +20,7 @@ const firstScreenBg = `linear-gradient(to left, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 
         要将<span class="highlight">长征精神</span><br>贯彻到底！
         <br>
         <span class="subtitle">
-          宣言书、宣传队和播种机
+          长征是宣言书、宣传队和播种机
         </span>
       </p>
 

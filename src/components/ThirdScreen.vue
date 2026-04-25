@@ -1,6 +1,8 @@
 <script setup>
 import { background3Png } from '@/assets'
+import { useDeviceDetect } from '@/composables/useDeviceDetect'
 
+const { isMobile } = useDeviceDetect()
 const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
 </script>
 
@@ -10,8 +12,9 @@ const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
     <!-- 第三屏背景图片 -->
     <div class="bg-image-third"></div>
 
-    <!-- 桌面版：一行显示 -->
+    <!-- 桌面版：一行显示（isMobile 为 false 时渲染） -->
     <div
+      v-if="!isMobile"
       v-motion
       :initial="{
         opacity: 0,
@@ -28,11 +31,12 @@ const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
       }"
       class="thrid-title desktop-only"
     >
-        雄关漫道真如铁 而今迈步从头越
+      雄关漫道真如铁 而今迈步从头越
     </div>
 
-    <!-- 移动版：两行显示 -->
+    <!-- 移动版：两行显示（isMobile 为 true 时渲染） -->
     <div
+      v-if="isMobile"
       v-motion
       :initial="{
         opacity: 0,
@@ -49,7 +53,7 @@ const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
       }"
       class="thrid-title mobile-only"
     >
-        雄关漫道真如铁<br>而今迈步从头越
+      雄关漫道真如铁<br>而今迈步从头越
     </div>
     <div
       v-motion
@@ -140,6 +144,29 @@ const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
 
 /* 移动端适配 */
 @media (max-width: 768px) {
+  /* 移动端背景改为纯白 */
+  .third-section {
+    background: #ffffff;
+  }
+
+  /* 移动端隐藏背景图片 */
+  .bg-image-third {
+    display: none;
+  }
+
+  /* 移动端文字颜色适配白色背景 */
+  .thrid-title {
+    color: #C41D1D;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 移动端副标题适配白色背景 */
+  .thrid-text {
+    color: #333333;
+    text-shadow: none;
+    font-size: clamp(0.85rem, 3vw, 1rem);
+  }
+
   /* 在移动端切换显示：隐藏桌面版，显示移动版 */
   .desktop-only {
     display: none;
@@ -147,11 +174,6 @@ const thirdScreenBg = `url(${background3Png}) no-repeat center center / cover`
 
   .mobile-only {
     display: flex;
-  }
-
-  /* 在移动端隐藏英文翻译 */
-  .thrid-text {
-    display: none;
   }
 }
 </style>

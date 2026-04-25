@@ -5,6 +5,7 @@ import { createHorizontalScroll } from '@/animations/horizontalScrollAnimation'
 
 import SectionTitle from './second/SectionTitle.vue'
 import SectionIntro from './second/SectionIntro.vue'
+import SectionTimeline from './second/SectionTimeline.vue'
 import SectionMap from './second/SectionMap.vue'
 import SectionSpirit from './second/SectionSpirit.vue'
 
@@ -81,12 +82,17 @@ defineExpose({ onSectionEnter, onSectionLeave })
         <SectionIntro />
       </div>
 
-      <!-- 第3屏：地图 + 3D 交互 -->
+      <!-- 🆕 第3屏：长征大事记时间轴 -->
+      <div class="item" id="timeline-section">
+        <SectionTimeline />
+      </div>
+
+      <!-- 第4屏：地图 + 3D 交互 -->
       <div class="item">
         <SectionMap ref="mapRef" />
       </div>
 
-      <!-- 第4屏：长征精神 -->
+      <!-- 第5屏：长征精神 -->
       <div class="item" id="spirit-section">
         <SectionSpirit ref="spiritRef" />
       </div>

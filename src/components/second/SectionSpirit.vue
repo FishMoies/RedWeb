@@ -1,12 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { useDeviceDetect } from '@/composables/useDeviceDetect'
+import { useSpiritReveal } from '@/composables/useSpiritReveal'
 
-const spiritVisible = ref(false)
-
-/** 由父组件或 IntersectionObserver 触发显示动画 */
-function show() {
-  spiritVisible.value = true
-}
+const { isMobile } = useDeviceDetect()
+const { spiritVisible, show } = useSpiritReveal()
 
 defineExpose({ show, spiritVisible })
 </script>
@@ -21,36 +18,32 @@ defineExpose({ show, spiritVisible })
 
     <!-- 四张卡片：2x2 网格 -->
     <div class="spirit-grid">
-      <!-- 卡片1：航天逐梦 -->
       <div class="spirit-card">
-        <div class="spirit-card-icon">🚀</div>
+        <div v-if="!isMobile" class="spirit-card-icon">🚀</div>
         <h3 class="spirit-card-title">航天逐梦</h3>
         <p class="spirit-card-desc">
           从"两弹一星"到载人航天，从北斗组网到火星探测，中国航天人用数十年走完了西方数百年的路——这是通向星辰大海的新长征。
         </p>
       </div>
 
-      <!-- 卡片2：脱贫攻坚 -->
       <div class="spirit-card">
-        <div class="spirit-card-icon">🏔️</div>
+        <div v-if="!isMobile" class="spirit-card-icon">🏔️</div>
         <h3 class="spirit-card-title">脱贫攻坚</h3>
         <p class="spirit-card-desc">
           近一亿农村贫困人口全部脱贫，832个贫困县全部摘帽。这场人类减贫史上的奇迹，正是"一切为了人民"长征精神的当代实践。
         </p>
       </div>
 
-      <!-- 卡片3：逆行无畏 -->
       <div class="spirit-card">
-        <div class="spirit-card-icon">🛡️</div>
+        <div v-if="!isMobile" class="spirit-card-icon">🛡️</div>
         <h3 class="spirit-card-title">逆行无畏</h3>
         <p class="spirit-card-desc">
           疫情面前，白衣执甲、逆行出征。没有从天而降的英雄，只有挺身而出的凡人——"不怕牺牲、英勇奋斗"的旗帜从未倒下。
         </p>
       </div>
 
-      <!-- 卡片4：自主创新 -->
       <div class="spirit-card">
-        <div class="spirit-card-icon">💡</div>
+        <div v-if="!isMobile" class="spirit-card-icon">💡</div>
         <h3 class="spirit-card-title">自主创新</h3>
         <p class="spirit-card-desc">
           芯片突围、人工智能、量子计算……面对"卡脖子"困境，新时代科研工作者正以"自力更生、艰苦奋斗"的信念，攀登科技长征路。
@@ -58,7 +51,6 @@ defineExpose({ show, spiritVisible })
       </div>
     </div>
 
-    <!-- 底部引语 -->
     <p class="spirit-footer">每一代人都有每一代人的长征路，每一代人都要走好自己的长征路。</p>
   </div>
 </template>
