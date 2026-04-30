@@ -10,7 +10,7 @@
   <a href="https://gsap.com/"><img src="https://img.shields.io/badge/GSAP-3.15-88CE02?logo=greensock" alt="GSAP" /></a>
   <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-8.0-646CFF?logo=vite" alt="Vite" /></a>
   <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Backend-Supabase-blueviolet?logo=supabase" alt="Supabase" /></a>
-  <img src="https://img.shields.io/badge/Status-Development-orange" alt="Status" />
+  <img src="https://img.shields.io/badge/Status-已停止维护-lightgrey" alt="Status" />
   <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4%20Determination%20and%20Vue.js-white" alt="Made with determination" />
 </p>
 
@@ -36,7 +36,7 @@
 
 本项目以 **"长征精神"** 为核心叙事主题，通过全屏滚动、横向时间轴、3D 视差交互、背景音乐等多媒体手段，打造沉浸式的红色文化展示体验。
 
-项目采用 **Vue 3 Composition API + Vite 8** 构建，前后端分离架构。前端核心动画依赖 **GSAP (ScrollTrigger)**，视觉交互丰富；配合 **Supabase** 后端实现轻量级数据存储。同时内置了 **骨架屏加载、音频自动播放策略、设备响应式适配** 等生产级实践，适合作为进阶 Vue 项目的学习参考。
+项目采用 **Vue 3 Composition API + Vite 8** 构建。前端核心动画依赖 **GSAP (ScrollTrigger)**，视觉交互丰富；同时内置了 **骨架屏加载、音频自动播放策略、设备响应式适配** 等生产级实践，适合作为进阶 Vue 项目的学习参考。
 
 ---
 
@@ -183,11 +183,16 @@ RedWeb/
 
 ## 一些感想
 
-> 这不是一个正式的项目，所以可能不会在后续进行进一步维护。
+> 这个项目作为比赛作品已经提交，所以不会在后续进行进一步维护。
 
 开发该项目的起因起源于我的上一个项目：[Overwatch-Gaming](https://github.com/FishMoies/Overwatch-Gaming)。简单来说，那是一个基础的商业化展示网站，不包含任何后端程序，只能起到展示的作用。
 
 如果你想要找一些前后端协同开发的 Vue 案例，那么我建议你看看我的上一个项目：其结合了基础的帖子系统和账户系统，以及使用了各种入门级别的后端技术；同时这个项目也使用了一点点即时动画，欢迎大家借鉴与批评指正。
+
+这个项目主要是为了完善我的作品集而参加比赛编写的项目，你可以理解为练手项目。但是实际上，这个项目的开发过程非常曲折。
+第一次我使用了`vueanim`和`fullpage`系统，但是后面因为`fullpage`对滚轮事件的强绑定，我就改为了使用`gsap`。我首先做了一个复刻`fullpage`的组件，但是后来发现如果想要实现，还是要很大程度上依附强绑定，所以我换成了监测滚轮事件的方式实现动画。  
+另外，我其实接触`gsap`没有多长时间，所以很多动画依旧使用css+js的方式实现。  
+这个项目已经结档，不会再在后续进行更新和维护，也不会接收处理Issues和PR请求。请酌情使用。
 
 ---
 
