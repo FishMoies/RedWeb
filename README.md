@@ -9,7 +9,6 @@
   <a href="https://vuejs.org/"><img src="https://img.shields.io/badge/Vue-3.5-green?logo=vue.js" alt="Vue" /></a>
   <a href="https://gsap.com/"><img src="https://img.shields.io/badge/GSAP-3.15-88CE02?logo=greensock" alt="GSAP" /></a>
   <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-8.0-646CFF?logo=vite" alt="Vite" /></a>
-  <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Backend-Supabase-blueviolet?logo=supabase" alt="Supabase" /></a>
   <img src="https://img.shields.io/badge/Status-已停止维护-lightgrey" alt="Status" />
   <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4%20Determination%20and%20Vue.js-white" alt="Made with determination" />
 </p>
@@ -44,11 +43,10 @@
 
 | 类别 | 技术 | 用途 |
 |------|------|------|
-| **核心框架** | [Vue 3](https://vuejs.org/) | 渐进式前端框架（Composition API + `<script setup>`） |
+| **核心框架** | [Vue 3.5](https://vuejs.org/) | 渐进式前端框架（Composition API + `<script setup>`） |
 | **构建工具** | [Vite 8](https://vite.dev/) | 极速开发服务器与生产构建 |
-| **动画引擎** | [GSAP 3.15](https://gsap.com/) | 高性能动画库（ScrollTrigger 驱动全屏/横向滚动） |
-| **交互动画** | [@vueuse/motion](https://motion.vueuse.org/) | 声明式滚动触发动画 |
-| **后端** | [Supabase](https://supabase.com/) | BaaS 后端服务 |
+| **动画引擎** | [GSAP 3.15](https://gsap.com/) | 高性能动画库（ScrollTrigger + gsap.ticker 驱动全屏/横向滚动/物理缓动） |
+| **交互动画** | [@vueuse/motion 3.0](https://motion.vueuse.org/) | 声明式滚动触发动画（模板内置 v-motion 指令） |
 | **部署** | [gh-pages](https://github.com/tschaub/gh-pages) | GitHub Pages 一键部署 |
 
 ---
@@ -56,22 +54,22 @@
 ## 功能特性
 
 ### 全屏面板滚动导航
-基于 GSAP ScrollTrigger 实现页面级面板切换导航，自动驱动当前活跃面板索引变化。第二屏因自身管理横向滚动，会被排除在面板滚动之外，由独立的滚动托管逻辑负责。
+`scrollNavigationAnimation` 模块通过 GSAP ScrollTrigger 遍历所有 `.panel` 元素，为每个面板创建独立的 `start: 'top 90%'` / `end: 'top 10%'` 触发器，在 `onEnter` 和 `onEnterBack` 回调中驱动当前活跃面板索引。第二屏（索引 1）因自身管理横向滚动被显式排除，其滚动完全由 `horizontalScrollAnimation` 托管——ScrollTrigger 通过 `pin: true` 钉住容器，配合 `gsap.ticker` 的 lerp 物理缓动实现平滑的水平位移。
 
 ### 横向时间轴滚动
-第二屏集成了带物理惯性的横向滚动效果，利用 lerp 缓动算法配合 gsap.ticker 实现流畅的拖拽感。时间轴节点依次展示长征历史事件，当滚动到最右侧的精神卡片区域时，IntersectionObserver 会自动触发精神卡片的入场动画。
+`horizontalScrollAnimation` 模块使用 `ScrollTrigger.create()` 将第二屏容器 `pin` 在视口中，通过 `end: () => +=${scrollDistance}` 动态计算滚动终点。每帧通过 `gsap.ticker` 执行 lerp 插值（桌面端系数 0.1 保持惯性手感，移动端 0.3 快速响应），驱动 `gsap.set(container, { x })` 实现水平位移。内置 `IntersectionObserver`（threshold 0.3）监听精神卡片区域进入视口时，触发 `useSpiritReveal().show()` 播放入场动画。
 
 ### 3D 鼠标视差交互
-第二屏的长征地图区域实现了 3D 鼠标视差效果，鼠标移动时元素会产生 `rotateX`、`rotateY` 和 `scale` 的组合变换，配合 `perspective(1000px)` 视场深度营造出立体悬浮感。鼠标移出时平滑复位，体验流畅自然。
+`useMouseParallax` composable 通过计算鼠标在元素内的相对偏移量（距中心点的归一化比值），生成限幅后的 `rotateX` / `rotateY`（最大 ±25°），与 `perspective(1000px)` 和 `scale(1.05)` 组合为 CSS `transform`，营造三维悬浮感。鼠标移出时通过 `onmouseleave` 平滑复位到 `rotateX(0) rotateY(0) scale(1)`。
 
 ### 背景音乐播放器
-全局唯一的 Audio 实例以单例模式运行，贯穿整个应用生命周期。播放器实现了完善的自动播放策略处理：页面初始化时自动检测浏览器 autoplay 支持情况，若被阻止则通过监听 `wheel`（桌面端）和 `touchstart`（移动端）事件在用户手势上下文中同步恢复播放。状态机涵盖 `idle → loading → playing → paused → blocked` 五种状态，支持音量控制、静音切换、播放状态和音量值的 `localStorage` 持久化。
+`useAudioPlayer` 采用模块级闭包单例模式——`audio` 实例与 `initialized` 标记位于模块作用域，所有调用者共享同一份响应式状态。初始化时通过 `checkAutoplaySupport()` 使用`静默 Audio` 探测浏览器 autoplay 策略；若被阻止，立即在 `wheel`（桌面端）和 `touchstart`（移动端）上注册 `{ once: true }` 一次性监听器，在用户手势上下文中**同步调用** `audio.play()`（非 async），确保浏览器正确识别用户手势。状态机覆盖 `idle → loading → playing → paused → blocked` 五种状态，`volume` 和 `isMuted` 通过 `localStorage` 持久化（键名 `redweb_music_volume` / `redweb_music_enabled`），`try-catch` 兜底处理无痕模式异常。
 
 ### 设备自适应
-同时基于 User-Agent 正则匹配和屏幕宽度（默认 768px 断点）进行双重设备检测，任一条件满足即判定为移动端。综合判断结果会标记判定来源（`ua` / `screen` / `both` / `neither`），便于按需调整交互策略。全局 CSS 跟随系统 `prefers-color-scheme` 自动切换明暗主题。
+`useDeviceDetect` 融合两层检测：模块顶层同步执行 `navigator.userAgent` 正则匹配（`MOBILE_UA_REGEX` / `TABLET_UA_REGEX`），避免初始化闪烁；`windowWidth` 通过 `resize` 事件响应式追踪，与 768px 断点比较。综合结果 `isMobile = isMobileByUA || isMobileByScreen` 取并集，`detectionSource` 计算属性精确标定判定来源（`ua` / `screen` / `both` / `neither`）。同时通过 `DeviceDetectPlugin`（Vue 插件）将检测结果注入全局 `$device`，供模板直接访问。
 
 ### 资源预加载与骨架屏
-首屏加载时通过 `usePreload` 并行预加载关键资源（背景视频、首屏图片、第二屏展示图、自定义字体），所有资源加载完毕后才展示主内容，避免资源竞态导致的白屏闪烁。加载过程中显示骨架屏占位，并设置 8 秒超时兜底，确保极端网络下用户仍能正常浏览。
+`usePreload` 在 `onMounted` 中并行预加载 4 类关键资源：背景视频（`<video>`）、首屏图片与第二屏展示图（`<img>`）、自定义 Huiwen 字体（`FontFace API`）。使用 `Promise.allSettled` 收集结果，单个资源失败不阻塞整体流程。字体通过 `useFontFace` 在 `<head>` 中注入 `@font-face` 规则（`font-display: swap`）。加载期间 `loading` 响应式变量控制骨架屏（`AppSkeleton`）显示，8 秒超时 `setTimeout` 兜底强制展示内容，`loading` 变为 `false` 后延迟 300ms 初始化 `ScrollTrigger` 确保 DOM 布局稳定。
 
 ---
 
